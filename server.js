@@ -19,6 +19,23 @@ app.use('/api/contact',  require('./routes/contact'))
 // Health check
 app.get('/api/health', (_, res) => res.json({ status: 'ok' }))
 
+// Image proxy — fetches external images server-side to bypass browser CORS
+app.get('/api/proxy-image', async (req, res) => {
+  const url = req.query.url
+  if (!url) return res.status(400).json({ message: 'url param required' })
+  try {
+    const fetch = (await import('node-fetch')).default
+    const response = await fetch(url)
+    if (!response.ok) return res.status(502).json({ message: 'Failed to fetch image' })
+    const contentType = response.headers.get('content-type') || 'image/jpeg'
+    res.set('Content-Type', contentType)
+    res.set('Cache-Control', 'public, max-age=86400')
+    response.body.pipe(res)
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+})
+
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('MongoDB connected')
