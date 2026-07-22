@@ -27,4 +27,10 @@ router.post('/', auth, upload.single('image'), (req, res) => {
   res.json({ url })
 })
 
+router.post('/multiple', auth, upload.array('images', 20), (req, res) => {
+  if (!req.files?.length) return res.status(400).json({ message: 'No files uploaded' })
+  const urls = req.files.map((f) => `${req.protocol}://${req.get('host')}/uploads/${f.filename}`)
+  res.json({ urls })
+})
+
 module.exports = router
